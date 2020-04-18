@@ -44,8 +44,6 @@ public class warcaby extends ApplicationAdapter
 
 		game = new Game(view, camera, mousePos);
 
-		it = 0;
-
 		Gdx.graphics.setWindowedMode((int)(Gdx.graphics.getDisplayMode().width*0.60), (int)(Gdx.graphics.getDisplayMode().height*0.60));
 	}
 

@@ -17,7 +17,7 @@ public class Pawn
     public Pawn(Vector2 mat, boolean pawnSide, TextureRegion texSpr)
     {
         positionMatrix = mat;
-        position = Utils.calcPos(positionMatrix);
+        position = Utils.calcPosInWorld(positionMatrix);
         side = pawnSide;
         texRegionSpr = texSpr;
         spr = new Sprite(texRegionSpr);
@@ -29,7 +29,18 @@ public class Pawn
 
     public void setTexRegion(TextureRegion tex) {texRegionSpr.setRegion(tex);}
 
-    public void setPos(Vector2 posGrid) {position = posGrid;}
+    public void setPosMatrix(Vector2 posGrid)
+    {
+        positionMatrix = posGrid;
+        position = Utils.calcPosInWorld(positionMatrix);
+        spr.setPosition(position.x, position.y);
+    }
+
+    public Vector2 getPosMatrix() {return positionMatrix;}
+
+    public Vector2 getPosWorld() {return position;}
+
+    public boolean getSide() {return side;}
 
     public void setDeath(boolean status) {isDead = status;}
 

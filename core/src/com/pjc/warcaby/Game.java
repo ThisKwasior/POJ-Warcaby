@@ -1,5 +1,7 @@
 package com.pjc.warcaby;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -24,28 +26,13 @@ public class Game
 	TextureRegion[] texRegions;
 	Pawn[] pawns;
 	Vector2 curCursorBoxMatrix;
-	Vector2 curSelected;
+	int curSelected = -1;
+	int[] curPawnPaths = {0, 0, 0, 0};
+	Vector2[] pawnMoveVecs;
 
     public void update()
     {
-		for(int y = 0; y != 8; ++y)
-		{
-			boolean doBreak = false;
-			for (int x = 0; x != 8; ++x)
-				if (Utils.doesMouseContain(boxes[x][y], Utils.TILE_SIZE, new Vector2(mousePos.x, view.getWorldHeight() - mousePos.y)))
-				{
-					curCursorBoxMatrix = new Vector2(x, y);
-					sprBoxUnderCursor = new Sprite(texRegions[1 + Utils.isBoxValid(curCursorBoxMatrix)]);
-					sprBoxUnderCursor.setPosition(boxes[x][y].x, boxes[x][y].y);
-					doBreak = true;
-					break;
-				}
-				else curCursorBoxMatrix.x = -1.f;
-
-			if(doBreak) break;
-		}
-
-		it = 0;
+		checkMouseActions();
     }
 
     public Game(Viewport v, Camera cam, Vector2 mp)
@@ -66,14 +53,14 @@ public class Game
 		texRegions[6] = new TextureRegion(texAtlas, 95, 14, Utils.TILE_SIZE, Utils.TILE_SIZE);	// Black Queen
 
 		sprPlayground = new Sprite(texRegions[0]);
-		sprBoxUnderCursor = new Sprite(texRegions[1]);
+		sprBoxUnderCursor = new Sprite(texRegions[2]);
 
 		// Setting up matrix for the cursor
-		boxes = new Vector2[8][8];
+		boxes = new Vector2[Utils.TILE_AMOUNT_WIDTH][Utils.TILE_AMOUNT_WIDTH];
 
-		for(int y = 0; y != 8; ++y)
-			for(int x = 0; x != 8; ++x)
-				boxes[x][y] = Utils.calcPos(new Vector2(x, y));
+		for(int y = 0; y != Utils.TILE_AMOUNT_WIDTH; ++y)
+			for(int x = 0; x != Utils.TILE_AMOUNT_WIDTH; ++x)
+				boxes[x][y] = Utils.calcPosInWorld(new Vector2(x, y));
 		curCursorBoxMatrix = new Vector2(0,0);
 
 		// Setting up pawns
@@ -88,6 +75,8 @@ public class Game
 					++it;
 				}
         it = 0;
+
+		pawnMoveVecs = new Vector2[4];
     }
 
     public void draw(SpriteBatch batch)
@@ -95,8 +84,42 @@ public class Game
 		sprPlayground.draw(batch);
 
 		for(int i = 0; i != pawns.length; ++i)
-			pawns[i].draw(batch);
+			if(!pawns[i].isDead())
+				pawns[i].draw(batch);
 
-		if(curCursorBoxMatrix.x != -1.f) sprBoxUnderCursor.draw(batch);
+		if(curSelected != -1) sprBoxUnderCursor.draw(batch);
     }
+
+    private void checkMouseActions()
+	{
+		if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))
+		{
+			curSelected = Utils.checkIfPawnUnderCursor(mousePos, pawns);
+			if (!currentPlayer)
+				if (curSelected >= 12) curSelected = -1;
+			if(currentPlayer)
+				if (curSelected < 12) curSelected = -1;
+
+			if (curSelected != -1)
+			{
+				Vector2 pawnWrl = pawns[curSelected].getPosWorld();
+				sprBoxUnderCursor.setPosition(pawnWrl.x, pawnWrl.y);
+			}
+		}
+
+		if(Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT) && curSelected != -1)
+		{
+			Vector2 moveBox = Utils.calcPosInMatrix(mousePos);
+			moveBox.x = (float) Math.floor(moveBox.x);
+			moveBox.y = (float) Math.floor(moveBox.y);
+
+			if(Utils.isBoxValid(moveBox) == 1)
+			{
+
+				pawns[curSelected].setPosMatrix(moveBox);
+				currentPlayer = !currentPlayer;
+				curSelected = -1;
+			}
+		}
+	}
 }
